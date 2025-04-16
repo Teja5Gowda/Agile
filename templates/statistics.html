@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Statistics - Finance Tracker
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Total Expenses -->
+    <div class="card mb-4">
+        <div class="card-header">Total Expenses</div>
+        <div class="card-body">
+            <h5 class="card-title">₹{{ total_expenses }}</h5>
+        </div>
+    </div>
+
+    <!-- Expense Breakdown by Category -->
+    <div class="card mb-4">
+        <div class="card-header">Expense Breakdown by Category</div>
+        <div class="card-body">
+            <table class="table">
+                <thead><tr><th>Category</th><th>Amount (₹)</th></tr></thead>
+                <tbody>
+                    {% for category, amount in expense_by_category.items() %}
+                    <tr><td>{{ category }}</td><td>₹{{ amount }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Top Spending Categories -->
+    <div class="card mb-4">
+        <div class="card-header">Top Spending Categories</div>
+        <div class="card-body">
+            <ul class="list-group">
+                {% for category, amount in top_spending_categories.items() %}
+                <li class="list-group-item">{{ category }}: ₹{{ amount }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Monthly Expenses -->
+    <div class="card mb-4">
+        <div class="card-header">Monthly Expenses</div>
+        <div class="card-body">
+            <table class="table">
+                <thead><tr><th>Month</th><th>Amount (₹)</th></tr></thead>
+                <tbody>
+                    {% for month, amount in monthly_expenses.items() %}
+                    <tr><td>{{ month }}</td><td>₹{{ amount }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Yearly Expenses -->
+    <div class="card mb-4">
+        <div class="card-header">Yearly Expenses</div>
+        <div class="card-body">
+            <table class="table">
+                <thead><tr><th>Year</th><th>Amount (₹)</th></tr></thead>
+                <tbody>
+                    {% for year, amount in yearly_expenses.items() %}
+                    <tr><td>{{ year }}</td><td>₹{{ amount }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Top Payment Methods -->
+    <div class="card mb-4">
+        <div class="card-header">Top Payment Methods</div>
+        <div class="card-body">
+            <table class="table">
+                <thead><tr><th>Payment Method</th><th>Amount (₹)</th></tr></thead>
+                <tbody>
+                    {% for method, amount in top_payment_methods.items() %}
+                    <tr><td>{{ method }}</td><td>₹{{ amount }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Daily Spending Trend -->
+    <div class="card mb-4">
+        <div class="card-header">Daily Spending Trend</div>
+        <div class="card-body">
+            <table class="table">
+                <thead><tr><th>Date</th><th>Amount (₹)</th></tr></thead>
+                <tbody>
+                    {% for date, amount in daily_spending.items() %}
+                    <tr><td>{{ date }}</td><td>₹{{ amount }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Expense Count by Category -->
+    <div class="card mb-4">
+        <div class="card-header">Expense Count by Category</div>
+        <div class="card-body">
+            <table class="table">
+                <thead><tr><th>Category</th><th>Count</th></tr></thead>
+                <tbody>
+                    {% for category, count in expense_count_by_category.items() %}
+                    <tr><td>{{ category }}</td><td>{{ count }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Average Spending -->
+    <div class="card mb-4">
+        <div class="card-header">Average Spending Per Transaction</div>
+        <div class="card-body">
+            <h5 class="card-title">₹{{ avg_spending | round(2) }}</h5>
+        </div>
+    </div>
+
+    <!-- Pie Chart -->
+    <div class="card mb-4">
+        <div class="card-header">Expense Distribution Chart</div>
+        <div class="card-body text-center">
+            <canvas id="expenseChart" width="300" height="300"></canvas>
+        </div>
+    </div>
+
+    <!-- Download CSV Button -->
+    <div class="text-end mb-5">
+        <button class="btn btn-success" onclick="downloadStatisticsCSV()">
+            <i class="fa fa-file-csv"></i> Download CSV
+        </button>
+    </div>
+</div>
+
+<!-- Chart.js Script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const expenseData = {
+        labels: {{ expense_by_category.keys() | list | tojson }},
+        datasets: [{
+            label: 'Expense Distribution',
+            data: {{ expense_by_category.values() | list | tojson }},
+            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
+            borderWidth: 1
+        }]
+    };
+
+    const ctx = document.getElementById('expenseChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'pie',
+        data: expenseData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': ₹' + context.raw;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    function downloadStatisticsCSV() {
+        let csv = 'Category,Amount (₹)\n';
+        {% for category, amount in expense_by_category.items() %}
+        csv += '{{ category }},{{ amount }}\n';
+        {% endfor %}
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'statistics.csv';
+        link.click();
+    }
+</script>
+{% endblock %}
